@@ -98,13 +98,32 @@
       moved = false;
     }, true);
   });
-  const toggle = $('.module-toggle');
-  const moduleWrap = $('#module-carousel');
-  toggle.addEventListener('click', () => {
-    const expanded = toggle.getAttribute('aria-expanded') !== 'true';
-    toggle.setAttribute('aria-expanded', String(expanded));
-    moduleWrap.classList.toggle('is-open', expanded);
-    toggle.textContent = expanded ? 'Recolher os módulos ↑' : 'Conhecer os módulos disponíveis ↓';
+  // O movimento automático cede o controle a quem arrasta, desliza ou usa as setas.
+  ['proof-carousel', 'module-track'].forEach(id => {
+    const track = document.getElementById(id);
+    if (!track) return;
+    let resumeAt = 0;
+    let hovered = false;
+    const pause = () => { resumeAt = performance.now() + 7000; };
+    ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(type =>
+      track.addEventListener(type, pause, { passive: type !== 'keydown' })
+    );
+    track.addEventListener('mouseenter', () => { hovered = true; pause(); });
+    track.addEventListener('mouseleave', () => { hovered = false; pause(); });
+    $$(`[data-slide="${id}"]`).forEach(button => button.addEventListener('click', pause));
+    setInterval(() => {
+      if (document.hidden || hovered || performance.now() < resumeAt ||
+          matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const card = track.firstElementChild;
+      if (!card || track.scrollWidth <= track.clientWidth + 4) return;
+      const gap = parseFloat(getComputedStyle(track).gap) || 0;
+      const step = card.getBoundingClientRect().width + gap;
+      if (track.scrollLeft >= track.scrollWidth - track.clientWidth - step / 2) {
+        track.scrollTo({ left: 0, behavior: 'instant' });
+      } else {
+        track.scrollBy({ left: step, behavior: 'smooth' });
+      }
+    }, 3600);
   });
   const video = $('#main-video');
   const audioButton = $('.audio-start');
