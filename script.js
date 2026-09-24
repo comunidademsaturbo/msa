@@ -103,16 +103,13 @@
     const track = document.getElementById(id);
     if (!track) return;
     let resumeAt = 0;
-    let hovered = false;
-    const pause = () => { resumeAt = performance.now() + 7000; };
+    const pause = () => { resumeAt = performance.now() + 5500; };
     ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(type =>
       track.addEventListener(type, pause, { passive: type !== 'keydown' })
     );
-    track.addEventListener('mouseenter', () => { hovered = true; pause(); });
-    track.addEventListener('mouseleave', () => { hovered = false; pause(); });
     $$(`[data-slide="${id}"]`).forEach(button => button.addEventListener('click', pause));
     setInterval(() => {
-      if (document.hidden || hovered || performance.now() < resumeAt ||
+      if (document.hidden || performance.now() < resumeAt ||
           matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const card = track.firstElementChild;
       if (!card || track.scrollWidth <= track.clientWidth + 4) return;
@@ -123,7 +120,7 @@
       } else {
         track.scrollBy({ left: step, behavior: 'smooth' });
       }
-    }, 3600);
+    }, 2700);
   });
   const video = $('#main-video');
   const audioButton = $('.audio-start');
