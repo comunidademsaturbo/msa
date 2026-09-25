@@ -15,7 +15,7 @@ fbq('track','PageView');
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=23"><script src="config.js" defer></script><script src="script.js?v=20" defer></script>
+<link rel="stylesheet" href="styles.css?v=23"><script src="config.js" defer></script><script src="script.js?v=21" defer></script>
 </head><body id="inicio"><noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1625292475624583&amp;ev=PageView&amp;noscript=1" alt=""></noscript><a class="skip" href="#conteudo">Pular para o conteúdo</a>
 <header class="header"><div class="container header-inner"><a class="brand" href="#inicio" aria-label="MSA Turbo Afiliados, voltar ao início"><img src="logo-msa-turbo.png" alt="MSA Turbo"><span>AFILIADOS</span></a><nav aria-label="Navegação principal"><a href="#resultados">Resultados</a><a href="#beneficios">Benefícios</a><a href="#modulos">Módulos</a><a href="#planos">Planos</a></nav><a class="header-cta" href="#planos">Conhecer os planos</a></div></header><div class="ticker" aria-label="Mais de 400 mil alunas, mais de 20 produtos exclusivos, calls ao vivo, suporte da comunidade, materiais prontos e premiações por conquistas"><div class="ticker-track" aria-hidden="true"><span>MAIS DE 400 MIL ALUNAS · MAIS DE 20 PRODUTOS EXCLUSIVOS · CALLS AO VIVO · SUPORTE DA COMUNIDADE · MATERIAIS PRONTOS · PREMIAÇÕES POR CONQUISTAS · </span><span>MAIS DE 400 MIL ALUNAS · MAIS DE 20 PRODUTOS EXCLUSIVOS · CALLS AO VIVO · SUPORTE DA COMUNIDADE · MATERIAIS PRONTOS · PREMIAÇÕES POR CONQUISTAS · </span></div></div>
 <main id="conteudo">
@@ -85,62 +85,4 @@ fbq('track','PageView');
 <dialog class="lightbox" id="lightbox" aria-label="Imagem ampliada"><button class="lightbox-close" type="button" aria-label="Fechar imagem">×</button><img alt=""><div class="slice-expanded" role="img" hidden></div></dialog>
 <dialog class="exit-popup" id="exit-popup" aria-labelledby="exit-title"><button class="popup-close" type="button" aria-label="Fechar">×</button><h2 id="exit-title">Até quando você vai deixar <em>as oportunidades passarem?</em></h2><p>Esta pode ser a chance de mudar o rumo da sua vida. Não perca mais tempo!</p><p class="popup-guarantee">Você tem 7 dias de garantia!</p><a class="button button-gold popup-cta" href="#planos">Conhecer meus planos</a><button class="popup-later" type="button">Continuar navegando</button></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-<script>
-/* MSA Turbo — eventos de engajamento Meta Pixel (1 disparo por visita) */
-(function(){
-  const fired = new Set();
-  function track(name, params){
-    if (fired.has(name)) return;
-    fired.add(name);
-    if (typeof window.fbq === 'function') window.fbq('trackCustom', name, params || {});
-  }
-
-  // Tempo real de permanência na página
-  setTimeout(() => track('Time30s'), 30000);
-  setTimeout(() => track('Time60s'), 60000);
-  setTimeout(() => track('Time120s'), 120000);
-
-  // Profundidade de rolagem
-  function checkScroll(){
-    const doc = document.documentElement;
-    const max = Math.max(1, doc.scrollHeight - window.innerHeight);
-    const pct = Math.min(100, Math.round((window.scrollY / max) * 100));
-    if (pct >= 50) track('Scroll50', {percent: 50});
-    if (pct >= 90) track('Scroll90', {percent: 90});
-  }
-  window.addEventListener('scroll', checkScroll, {passive:true});
-
-  // Vídeo principal do topo
-  const hero = document.getElementById('hero-video');
-  if (hero){
-    hero.addEventListener('play', () => track('VideoPlay', {video:'hero'}));
-    hero.addEventListener('timeupdate', () => {
-      if (!hero.duration || !isFinite(hero.duration)) return;
-      const pct = hero.currentTime / hero.duration;
-      if (pct >= .50) track('Video50', {video:'hero'});
-      if (pct >= .95) track('VideoComplete', {video:'hero'});
-    });
-    hero.addEventListener('ended', () => track('VideoComplete', {video:'hero'}));
-  }
-
-  // Interação com carrossel de resultados (arraste, roda, toque/card ou setas)
-  const proof = document.getElementById('proof-carousel');
-  if (proof){
-    ['pointerdown','wheel','touchstart'].forEach(ev => proof.addEventListener(ev, () => track('ResultsCarousel'), {passive:true}));
-    proof.addEventListener('click', () => track('ResultsCarousel'));
-  }
-  document.querySelectorAll('[data-slide="proof-carousel"]').forEach(el => el.addEventListener('click', () => track('ResultsCarousel')));
-
-  // Interação com carrossel de módulos
-  const modules = document.getElementById('module-track');
-  if (modules){
-    ['pointerdown','wheel','touchstart'].forEach(ev => modules.addEventListener(ev, () => track('ModulesCarousel'), {passive:true}));
-  }
-  document.querySelectorAll('[data-slide="module-track"]').forEach(el => el.addEventListener('click', () => track('ModulesCarousel')));
-
-  // Cliques em qualquer CTA de WhatsApp
-  document.querySelectorAll('[data-whatsapp]').forEach(el => el.addEventListener('click', () => track('WhatsAppClick')));
-})();
-</script>
 </body></html>

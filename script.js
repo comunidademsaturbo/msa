@@ -3,6 +3,41 @@
   const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
   $('#year').textContent = new Date().getFullYear();
   const links = window.MSA_LINKS || {};
+  const firedEvents = new Set();
+  function trackOnce(name) {
+    if (firedEvents.has(name)) return;
+    try {
+      if (sessionStorage.getItem(`msaEvent:${name}`)) {
+        firedEvents.add(name);
+        return;
+      }
+    } catch (_) {}
+    if (typeof window.fbq !== 'function') return;
+    window.fbq('trackCustom', name);
+    firedEvents.add(name);
+    try { sessionStorage.setItem(`msaEvent:${name}`, '1'); } catch (_) {}
+  }
+  let activeSeconds = 0;
+  setInterval(() => {
+    if (document.hidden) return;
+    activeSeconds++;
+    if (activeSeconds >= 30) trackOnce('Time30s');
+    if (activeSeconds >= 60) trackOnce('Time60s');
+    if (activeSeconds >= 120) trackOnce('Time120s');
+  }, 1000);
+  let scrollScheduled = false;
+  window.addEventListener('scroll', () => {
+    if (scrollScheduled) return;
+    scrollScheduled = true;
+    requestAnimationFrame(() => {
+      scrollScheduled = false;
+      const scrollable = document.documentElement.scrollHeight - innerHeight;
+      if (scrollable <= 0) return;
+      const depth = scrollY / scrollable;
+      if (depth >= .5) trackOnce('Scroll50');
+      if (depth >= .9) trackOnce('Scroll90');
+    });
+  }, { passive: true });
   const toast = $('#toast');
   let toastTimer;
   function notify(message) {
@@ -43,6 +78,7 @@
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.addEventListener('click', () => {
+        trackOnce('WhatsAppClick');
         if (typeof window.fbq === 'function') window.fbq('track', 'Contact', { content_name: 'WhatsApp MSA Turbo' });
       });
     } else link.addEventListener('click', event => {
@@ -110,6 +146,23 @@
   ['proof-carousel', 'module-track'].forEach(id => {
     const track = document.getElementById(id);
     if (!track) return;
+    const eventName = id === 'proof-carousel' ? 'ResultsCarousel' : 'ModulesCarousel';
+    let pointerStart = null;
+    track.addEventListener('pointerdown', e => { pointerStart = { x: e.clientX, y: e.clientY }; });
+    track.addEventListener('pointermove', e => {
+      if (!pointerStart) return;
+      if (Math.abs(e.clientX - pointerStart.x) >= 8 &&
+          Math.abs(e.clientX - pointerStart.x) > Math.abs(e.clientY - pointerStart.y)) trackOnce(eventName);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(type =>
+      track.addEventListener(type, () => { pointerStart = null; }));
+    track.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaX) > 3 || (e.shiftKey && Math.abs(e.deltaY) > 3)) trackOnce(eventName);
+    }, { passive: true });
+    track.addEventListener('keydown', e => {
+      if (['ArrowLeft', 'ArrowRight'].includes(e.key)) trackOnce(eventName);
+    });
+    $$(`[data-slide="${id}"]`).forEach(button => button.addEventListener('click', () => trackOnce(eventName)));
     let resumeAt = 0;
     const pause = () => { resumeAt = performance.now() + 5500; };
     ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach(type =>
@@ -132,6 +185,17 @@
   });
   const heroVideo = $('#hero-video');
   const heroAudio = $('.hero-audio');
+  function watchVideo(video) {
+    if (!video) return () => {};
+    let engaged = false;
+    video.addEventListener('timeupdate', () => {
+      if (engaged && Number.isFinite(video.duration) && video.duration > 0 &&
+          video.currentTime >= video.duration / 2) trackOnce('Video50');
+    });
+    video.addEventListener('ended', () => { if (engaged) trackOnce('VideoComplete'); });
+    return () => { engaged = true; trackOnce('VideoPlay'); };
+  }
+  const engageHeroVideo = watchVideo(heroVideo);
   if (heroVideo && heroAudio) {
     heroVideo.play().catch(() => {});
     heroAudio.addEventListener('click', async () => {
@@ -139,6 +203,8 @@
       heroVideo.volume = 1;
       try {
         await heroVideo.play();
+        if (heroVideo.currentTime > 0) heroVideo.currentTime = 0;
+        engageHeroVideo();
         heroVideo.controls = true;
         heroAudio.hidden = true;
       } catch (_) {
@@ -148,12 +214,14 @@
     });
   }
   const video = $('#main-video');
+  const engageCommunityVideo = watchVideo(video);
   const audioButton = $('.audio-start');
   audioButton.addEventListener('click', async () => {
     video.muted = false;
     video.volume = 1;
     try {
       await video.play();
+      engageCommunityVideo();
       video.controls = true;
       audioButton.hidden = true;
     } catch (_) {
