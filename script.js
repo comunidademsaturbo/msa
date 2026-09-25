@@ -18,11 +18,19 @@
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.addEventListener('click', () => {
-        if (typeof window.fbq === 'function') window.fbq('trackCustom', 'CheckoutClick', {
-          plan: link.dataset.checkout === 'oneYear' ? '1_ano' : '2_anos',
-          value: link.dataset.checkout === 'oneYear' ? 497 : 597,
+        if (typeof window.fbq !== 'function') return;
+        const oneYear = link.dataset.checkout === 'oneYear';
+        const plan = oneYear ? '1_ano' : '2_anos';
+        const details = {
+          content_name: oneYear ? 'MSA Turbo - acesso por 1 ano' : 'MSA Turbo - acesso por 2 anos',
+          content_ids: [plan],
+          content_type: 'product',
+          plan,
+          value: oneYear ? 497 : 597,
           currency: 'BRL'
-        });
+        };
+        window.fbq('track', 'InitiateCheckout', details);
+        window.fbq('trackCustom', oneYear ? 'CliqueCheckout1Ano' : 'CliqueCheckout2Anos', details);
       });
     } else link.addEventListener('click', event => {
       event.preventDefault();
@@ -122,6 +130,23 @@
       }
     }, 2700);
   });
+  const heroVideo = $('#hero-video');
+  const heroAudio = $('.hero-audio');
+  if (heroVideo && heroAudio) {
+    heroVideo.play().catch(() => {});
+    heroAudio.addEventListener('click', async () => {
+      heroVideo.muted = false;
+      heroVideo.volume = 1;
+      try {
+        await heroVideo.play();
+        heroVideo.controls = true;
+        heroAudio.hidden = true;
+      } catch (_) {
+        heroVideo.muted = true;
+        heroAudio.querySelector('strong').textContent = 'Toque para reproduzir';
+      }
+    });
+  }
   const video = $('#main-video');
   const audioButton = $('.audio-start');
   audioButton.addEventListener('click', async () => {
